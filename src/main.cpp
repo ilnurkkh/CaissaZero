@@ -1,4 +1,5 @@
 #include <iostream>
+
 #include "types.hpp"
 
 inline void printBB(Bitboard bb);
@@ -16,10 +17,11 @@ int main() {
   std::cout << "Bitboard for Center Squares:\n";
   printBB(CENTER_SQUARES_BB);
 
-  std::cout << "Number of squares in Rank 1: " << popCount(RANK_BB[RANK_1]) << std::endl;
+  std::cout << "Number of squares in Rank 1: " << popCount(RANK_BB[RANK_1])
+            << std::endl;
 
   Bitboard diag = MAIN_DIAGONAL_BB;
-  while(diag) {
+  while (diag) {
     Square sq = popLsb(diag);
     std::cout << "Popped Square Index: " << static_cast<int>(sq) << std::endl;
 
