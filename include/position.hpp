@@ -57,6 +57,16 @@ class Position {
         ~bb;  // Clear the bit for this piece type
   }
 
+  Piece getPieceAt(Square sq) const {
+    Bitboard bb = squareBB(sq);
+    for (size_t p = WHITE_PAWN; p <= BLACK_KING; ++p) {
+      if (pieces[p] & bb) {
+        return static_cast<Piece>(p);
+      }
+    }
+    return PIECE_NONE;
+  }
+
   void setFEN(const std::string &fen) {
     // Clear the current position
     pieces.fill(0);

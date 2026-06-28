@@ -11,17 +11,59 @@ int main() {
 
   Position pos;
 
-  // We convert string_view to std::string because setFEN expects a std::string
+  // ---------------------------------------------------------
+  // Test 1: Starting Position FEN
+  // ---------------------------------------------------------
   pos.setFEN(std::string(STARTING_FEN));
+  std::cout << "--- Starting Position Tests ---\n";
 
-  std::cout << "White Pieces (Should be solid on Ranks 1 and 2):\n";
-  printBB(pos.getPiecesByColor(WHITE));
+  int whitePawns = popCount(pos.getPieces(WHITE_PAWN));
+  std::cout << "popcount(pieces[WHITE][PAWN]) = 8 : "
+            << (whitePawns == 8 ? "PASS" : "FAIL") << "\n";
 
-  std::cout << "All Knights (Should be on b1, g1, b8, g8):\n";
-  printBB(pos.getPiecesByType(KNIGHT));
+  Bitboard allPieces =
+      pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
+  int totalOccupancy = popCount(allPieces);
+  std::cout << "popcount(occupancy[BOTH]) = 32    : "
+            << (totalOccupancy == 32 ? "PASS" : "FAIL") << "\n";
 
-  std::cout << "All Pawns (Should be solid on Ranks 2 and 7):\n";
-  printBB(pos.getPiecesByType(PAWN));
+  Piece e1Piece = pos.getPieceAt(E1);
+  std::cout << "piece_on(E1) = WHITE_KING         : "
+            << (e1Piece == WHITE_KING ? "PASS" : "FAIL") << "\n";
+
+  Piece e8Piece = pos.getPieceAt(E8);
+  std::cout << "piece_on(E8) = BLACK_KING         : "
+            << (e8Piece == BLACK_KING ? "PASS" : "FAIL") << "\n";
+
+  Square epSquare = pos.getEnPassantSquare();
+  std::cout << "ep_square = NO_SQ                 : "
+            << (epSquare == SQUARE_NONE ? "PASS" : "FAIL") << "\n";
+
+  CastlingRights cr = pos.getCastlingRights();
+  bool allCastling = (cr == (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE |
+                             BLACK_QUEENSIDE));
+  std::cout << "castling_rights = 0b1111          : "
+            << (allCastling ? "PASS" : "FAIL") << "\n\n";
+
+  // ---------------------------------------------------------
+  // Test 2: Position 2 from Perft suite
+  // ---------------------------------------------------------
+  std::string fen2 =
+      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
+  pos.setFEN(fen2);
+  std::cout << "--- Position 2 Tests ---\n";
+
+  Bitboard allPieces2 =
+      pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
+  int totalOccupancy2 = popCount(allPieces2);
+  std::cout << "popcount(occupancy[BOTH]) = 32    : "
+            << (totalOccupancy2 == 32 ? "PASS" : "FAIL") << "\n";
+
+  CastlingRights cr2 = pos.getCastlingRights();
+  bool allCastling2 = (cr2 == (WHITE_KINGSIDE | WHITE_QUEENSIDE |
+                               BLACK_KINGSIDE | BLACK_QUEENSIDE));
+  std::cout << "castling_rights = 0b1111          : "
+            << (allCastling2 ? "PASS" : "FAIL") << "\n";
 
   return 0;
 }
