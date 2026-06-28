@@ -11,9 +11,12 @@ using Bitboard = uint64_t;
 // --- Constants ---
 
 constexpr int BOARD_SQUARE_COUNT = 64;
+constexpr std::string_view STARTING_FEN =
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 // --- Enums ---
 
+// Little-endian rank-file mapping for squares
 enum Square : uint8_t {
   A1,
   B1,
@@ -135,6 +138,7 @@ enum Piece : uint8_t {
 };
 
 enum CastlingRights : uint8_t {
+  NO_CASTLING = 0b0000,
   WHITE_KINGSIDE = 0b0001,
   WHITE_QUEENSIDE = 0b0010,
   BLACK_KINGSIDE = 0b0100,
@@ -225,3 +229,37 @@ inline Square popLsb(Bitboard &bb) {
 
 // Instantly counts set bits (how many pieces are on this board)
 inline int popCount(Bitboard bb) { return __builtin_popcountll(bb); }
+
+// --- Other Utility Functions ---
+
+// Converts a character to a piece
+constexpr Piece charToPiece(char c) {
+  switch (c) {
+    case 'P':
+      return WHITE_PAWN;
+    case 'N':
+      return WHITE_KNIGHT;
+    case 'B':
+      return WHITE_BISHOP;
+    case 'R':
+      return WHITE_ROOK;
+    case 'Q':
+      return WHITE_QUEEN;
+    case 'K':
+      return WHITE_KING;
+    case 'p':
+      return BLACK_PAWN;
+    case 'n':
+      return BLACK_KNIGHT;
+    case 'b':
+      return BLACK_BISHOP;
+    case 'r':
+      return BLACK_ROOK;
+    case 'q':
+      return BLACK_QUEEN;
+    case 'k':
+      return BLACK_KING;
+    default:
+      return PIECE_NONE;  // Invalid character
+  }
+}

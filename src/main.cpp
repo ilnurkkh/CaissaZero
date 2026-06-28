@@ -1,32 +1,29 @@
 #include <iostream>
+#include <string>
 
+#include "position.hpp"
 #include "types.hpp"
 
 inline void printBB(Bitboard bb);
 
 int main() {
-  // Testing the types and bitboard utilities
-  std::cout << "CaissaZero Initialized!" << std::endl;
+  std::cout << "=== CAISSAZERO INITIALIZED ===\n\n";
 
-  std::cout << "Bitboard for square A1:\n";
-  printBB(squareBB(A1));
-  std::cout << "Bitboard for Rank 4:\n";
-  printBB(RANK_BB[RANK_4]);
-  std::cout << "Bitboard for File D:\n";
-  printBB(FILE_BB[FILE_D]);
-  std::cout << "Bitboard for Center Squares:\n";
-  printBB(CENTER_SQUARES_BB);
+  Position pos;
 
-  std::cout << "Number of squares in Rank 1: " << popCount(RANK_BB[RANK_1])
-            << std::endl;
+  // We convert string_view to std::string because setFEN expects a std::string
+  pos.setFEN(std::string(STARTING_FEN));
 
-  Bitboard diag = MAIN_DIAGONAL_BB;
-  while (diag) {
-    Square sq = popLsb(diag);
-    std::cout << "Popped Square Index: " << static_cast<int>(sq) << std::endl;
+  std::cout << "White Pieces (Should be solid on Ranks 1 and 2):\n";
+  printBB(pos.getPiecesByColor(WHITE));
 
-    printBB(diag);
-  }
+  std::cout << "All Knights (Should be on b1, g1, b8, g8):\n";
+  printBB(pos.getPiecesByType(KNIGHT));
+
+  std::cout << "All Pawns (Should be solid on Ranks 2 and 7):\n";
+  printBB(pos.getPiecesByType(PAWN));
+
+  return 0;
 }
 
 // Utility function to print a bitboard in a human-readable format
