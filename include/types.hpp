@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string_view>
 
 // --- Type Aliases ---
 
@@ -110,6 +111,9 @@ enum Rank : uint8_t {
 };
 
 enum Color : uint8_t { WHITE, BLACK, COLOR_NONE = 2 };
+constexpr Color operator~(Color c) {
+    return static_cast<Color>(c ^ 1); // XOR with 1 flips 0 to 1, and 1 to 0
+}
 
 enum PieceType : uint8_t {
   PAWN,
