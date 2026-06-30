@@ -57,6 +57,39 @@ class Position {
     hashKey ^= ZOBRIST.pieceKeys[piece][sq];
   }
 
+  
+  void toggleSideToMove() {
+    sideToMove = ~sideToMove;
+    hashKey ^= ZOBRIST.sideKey;
+  }
+  
+  void setEnPassantSquare(Square sq) {
+    // XOR out the old en-passant state
+    if (enPassantSquare != SQUARE_NONE) {
+      hashKey ^= ZOBRIST.enPassantKeys[getFile(enPassantSquare)];
+    } else {
+      hashKey ^= ZOBRIST.enPassantKeys[FILE_NONE];
+    }
+    
+    enPassantSquare = sq;
+    
+    // XOR in the new en-passant state
+    if (enPassantSquare != SQUARE_NONE) {
+      hashKey ^= ZOBRIST.enPassantKeys[getFile(enPassantSquare)];
+    } else {
+      hashKey ^= ZOBRIST.enPassantKeys[FILE_NONE];
+    }
+  }
+  
+  void updateCastlingRights(CastlingRights cr) {
+    // XOR out the old, XOR in the new
+    hashKey ^= ZOBRIST.castlingKeys[castlingRights];
+    castlingRights = cr;
+    hashKey ^= ZOBRIST.castlingKeys[castlingRights];
+  }
+
+  // --- Utilities ---
+  
   Piece getPieceAt(Square sq) const {
     Bitboard bb = squareBB(sq);
     for (size_t p = WHITE_PAWN; p <= BLACK_KING; ++p) {
@@ -65,6 +98,30 @@ class Position {
       }
     }
     return PIECE_NONE;
+  }
+
+  // Computes the hash entirely from scratch (Used for Verification/Debugging)
+  uint64_t computeHashFromScratch() const {
+    uint64_t hash{};
+
+    for (size_t sq = 0; sq < BOARD_SQUARE_COUNT; ++sq) {
+      Piece p = getPieceAt(static_cast<Square>(sq));
+      if (p != PIECE_NONE) {
+        hash ^= ZOBRIST.pieceKeys[p][sq];
+      }
+    }
+
+    if (sideToMove == BLACK) hash ^= ZOBRIST.sideKey;
+    
+    hash ^= ZOBRIST.castlingKeys[castlingRights];
+    
+    if (enPassantSquare != SQUARE_NONE) {
+      hash ^= ZOBRIST.enPassantKeys[getFile(enPassantSquare)];
+    } else {
+      hash ^= ZOBRIST.enPassantKeys[FILE_NONE];
+    }
+
+    return hash;
   }
 
   // Set the position from a FEN string
@@ -92,13 +149,18 @@ class Position {
         rank--;
         file = FILE_A;
       } else if (isdigit(c)) {
-        file += c - '0';  // Skip empty squares
+        file += c - '0';
       } else {
         Piece piece = charToPiece(c);
         if (piece != PIECE_NONE) {
-          Square sq =
-              makeSquare(static_cast<File>(file), static_cast<Rank>(rank));
-          setPiece(piece, sq);
+          Square sq = makeSquare(static_cast<File>(file), static_cast<Rank>(rank));
+          
+          // Place piece physically without triggering incremental hash updates
+          Bitboard bb = squareBB(sq);
+          pieces[piece] |= bb;
+          byColor[static_cast<Color>(piece / 6)] |= bb;
+          byType[static_cast<PieceType>(piece % 6)] |= bb;
+          
           file++;
         }
       }
@@ -106,9 +168,6 @@ class Position {
 
     // Parse the active color
     sideToMove = (active == "w") ? WHITE : BLACK;
-    if (sideToMove == BLACK) {
-      hashKey ^= ZOBRIST.sideKey;
-    }
 
     // 5. Parse Castling Rights
     if (castling != "-") {
@@ -119,20 +178,19 @@ class Position {
       if (castling.find('q') != std::string::npos) rights |= BLACK_QUEENSIDE;
       castlingRights = static_cast<CastlingRights>(rights);
     }
-    hashKey ^= ZOBRIST.castlingKeys[castlingRights];
 
     // 6. Parse En Passant
     if (enPassant != "-") {
       File epFile = static_cast<File>(enPassant[0] - 'a');
       Rank epRank = static_cast<Rank>(enPassant[1] - '1');
       enPassantSquare = makeSquare(epFile, epRank);
-      hashKey ^= ZOBRIST.enPassantKeys[epFile];
-    } else {
-      hashKey ^= ZOBRIST.enPassantKeys[FILE_NONE]; // Index 8 represents no en-passant square
     }
 
     // 7. Parse Clocks
     if (!half.empty()) halfMoveClock = std::stoi(half);
     if (!full.empty()) fullMoveNumber = std::stoi(full);
+
+    // 7. Calculate the Zobrist hash ONCE at the very end
+    hashKey = computeHashFromScratch();
   }
 };

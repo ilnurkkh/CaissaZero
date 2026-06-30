@@ -1,4 +1,6 @@
 #include <iostream>
+#include <iomanip>
+#include <cassert>
 #include <string>
 
 #include "attacks.hpp"
@@ -137,6 +139,69 @@ int main() {
             << (pA4_pass ? "PASS" : "FAIL") << "\n\n";
 
   std::cout << "ALL CHECKPOINTS COMPLETE.\n";
+
+  // =========================================================
+    // CHECKPOINT 1.4: Zobrist Hashing Verification
+    // =========================================================
+    std::cout << "\n=== CHECKPOINT 1.4 TESTING ===\n\n";
+
+    // Standard starting FEN
+    pos.setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
+    uint64_t initialHash = pos.getHashKey();
+    uint64_t scratchHash = pos.computeHashFromScratch();
+
+    std::cout << std::hex << std::uppercase;
+    std::cout << "Starting Position Hash  : 0x" << initialHash << "\n";
+    std::cout << "Computed from scratch   : 0x" << scratchHash << "\n";
+    
+    bool nonZero = (initialHash != 0ULL);
+    bool startsMatch = (initialHash == scratchHash);
+    std::cout << "Valid non-zero seed?    : " << (nonZero ? "PASS" : "FAIL") << "\n";
+    std::cout << "Initial hashes match?   : " << (startsMatch ? "PASS" : "FAIL") << "\n\n";
+
+    // HARD ASSERT: The hashes MUST match here
+    assert(initialHash == scratchHash);
+
+    // --- Simulate a Move: e2-e4 ---
+    std::cout << "-> Simulating move: e2-e4\n";
+    pos.removePiece(WHITE_PAWN, E2);
+    pos.setPiece(WHITE_PAWN, E4);
+    pos.setEnPassantSquare(E3); // e4 creates an EP target on e3
+    pos.toggleSideToMove();     // Now it is Black's turn
+
+    uint64_t moveHash = pos.getHashKey();
+    uint64_t moveScratchHash = pos.computeHashFromScratch();
+
+    std::cout << "Incremental update      : 0x" << moveHash << "\n";
+    std::cout << "Computed from scratch   : 0x" << moveScratchHash << "\n";
+    
+    bool moveMatch = (moveHash == moveScratchHash);
+    bool hashChanged = (moveHash != initialHash);
+    std::cout << "Move hashes match?      : " << (moveMatch ? "PASS" : "FAIL") << "\n";
+    std::cout << "Hash successfully changed?: " << (hashChanged ? "PASS" : "FAIL") << "\n\n";
+
+    // HARD ASSERT: The hashes MUST match after an incremental update
+    assert(moveHash == moveScratchHash);
+
+    // --- Simulate Unmaking the Move ---
+    std::cout << "-> Unmaking move: e2-e4\n";
+    pos.toggleSideToMove();               // Back to White's turn
+    pos.setEnPassantSquare(SQUARE_NONE);  // Clear the EP square
+    pos.removePiece(WHITE_PAWN, E4);
+    pos.setPiece(WHITE_PAWN, E2);
+
+    uint64_t unmakeHash = pos.getHashKey();
+    
+    std::cout << "Restored Incremental    : 0x" << unmakeHash << "\n";
+    bool unmakeMatch = (unmakeHash == initialHash);
+    std::cout << "Perfectly restored?     : " << (unmakeMatch ? "PASS" : "FAIL") << "\n\n";
+
+    // HARD ASSERT: The hash must identically return to the starting position hash
+    assert(unmakeHash == initialHash);
+
+    std::cout << std::dec; // Reset cout format back to decimal
+    std::cout << "CHECKPOINT 1.4 VERIFIED.\n";
   return 0;
 }
 
