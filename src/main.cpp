@@ -6,6 +6,7 @@
 #include "attacks.hpp"
 #include "position.hpp"
 #include "types.hpp"
+#include "move.hpp"
 
 void printBB(Bitboard bb);
 
@@ -41,6 +42,8 @@ int main() {
 
   std::cout << "popcount(RANK_BB[RANK_1]) == 8    : "
             << (popCount(RANK_BB[RANK_1]) == 8 ? "PASS" : "FAIL") << "\n\n";
+  
+  std::cout << "CHECKPOINT 1.1 VERIFIED.\n";
 
   // =========================================================
   // CHECKPOINT 1.2: Position & FEN Parsing
@@ -98,6 +101,8 @@ int main() {
                                BLACK_KINGSIDE | BLACK_QUEENSIDE));
   std::cout << "castling_rights = 0b1111          : "
             << (allCastling2 ? "PASS" : "FAIL") << "\n";
+  
+  std::cout << "CHECKPOINT 1.2 VERIFIED.\n";
 
   // =========================================================
   // CHECKPOINT 1.3: Attack Table Verification
@@ -138,7 +143,7 @@ int main() {
   std::cout << "PAWN_ATTACKS[WHITE][A4] (1 bit: B5)      : "
             << (pA4_pass ? "PASS" : "FAIL") << "\n\n";
 
-  std::cout << "ALL CHECKPOINTS COMPLETE.\n";
+  std::cout << "CHECKPOINT 1.3 VERIFIED.\n";
 
   // =========================================================
     // CHECKPOINT 1.4: Zobrist Hashing Verification
@@ -202,6 +207,57 @@ int main() {
 
     std::cout << std::dec; // Reset cout format back to decimal
     std::cout << "CHECKPOINT 1.4 VERIFIED.\n";
+
+    // =========================================================
+    // CHECKPOINT 1.5: Move Encoding Verification
+    // =========================================================
+    std::cout << "\n=== CHECKPOINT 1.5 TESTING ===\n\n";
+
+    // 1. Verify size is strictly 2 bytes
+    std::cout << "sizeof(Move) == 2 bytes  : " << (sizeof(Move) == 2 ? "PASS" : "FAIL") << "\n";
+    assert(sizeof(Move) == 2);
+
+    // 2. from_sq(make_move(E2, E4)) = E2
+    Move m_e2e4(E2, E4);
+    std::cout << "getFrom(E2-E4) == E2     : " << (m_e2e4.getFrom() == E2 ? "PASS" : "FAIL") << "\n";
+    assert(m_e2e4.getFrom() == E2);
+
+    // 3. to_sq(make_move(E2, E4, DOUBLE_PUSH)) = E4
+    Move m_dpush(E2, E4, FLAG_DOUBLE_PAWN_PUSH);
+    std::cout << "getTo(E2-E4, DBL) == E4  : " << (m_dpush.getTo() == E4 ? "PASS" : "FAIL") << "\n";
+    assert(m_dpush.getTo() == E4);
+
+    // 4. is_promotion(make_move(E7, E8, QUEEN_PROMO)) = true
+    Move m_promo(E7, E8, FLAG_PROMOTE_QUEEN);
+    std::cout << "isPromotion(Q_PROMO)     : " << (m_promo.isPromotion() ? "PASS" : "FAIL") << "\n";
+    assert(m_promo.isPromotion());
+
+    // 5. is_capture(make_move(D5, E6, EN_PASSANT)) = true
+    Move m_ep(D5, E6, FLAG_EP_CAPTURE);
+    std::cout << "isCapture(EN_PASSANT)    : " << (m_ep.isCapture() ? "PASS" : "FAIL") << "\n";
+    assert(m_ep.isCapture());
+
+    // 6. Round-Trip Fidelity: Promotion-Capture Move
+    std::cout << "\n--- Round-Trip Fidelity Test (Promo-Capture) ---\n";
+    Move m_promocap(E7, F8, FLAG_PROMOTE_QUEEN_CAPTURE);
+    
+    std::cout << "Move Encoded: E7 -> F8 (Queen Capture Promotion)\n";
+    std::cout << "Expected From : 52 (E7) | Actual: " << +m_promocap.getFrom() << "\n";
+    std::cout << "Expected To   : 61 (F8) | Actual: " << +m_promocap.getTo() << "\n";
+    std::cout << "Expected Flag : 15      | Actual: " << m_promocap.getFlags() << "\n";
+    std::cout << "Is Capture?   : Yes     | Actual: " << (m_promocap.isCapture() ? "Yes" : "No") << "\n";
+    std::cout << "Is Promotion? : Yes     | Actual: " << (m_promocap.isPromotion() ? "Yes" : "No") << "\n";
+    std::cout << "Promo Piece   : 4 (Q)   | Actual: " << +m_promocap.getPromotionPieceType() << "\n";
+
+    // Strict round-trip assertions
+    assert(m_promocap.getFrom() == E7);
+    assert(m_promocap.getTo() == F8);
+    assert(m_promocap.getFlags() == FLAG_PROMOTE_QUEEN_CAPTURE);
+    assert(m_promocap.isCapture());
+    assert(m_promocap.isPromotion());
+    assert(m_promocap.getPromotionPieceType() == QUEEN);
+
+    std::cout << "\nCHECKPOINT 1.5 VERIFIED.\n";
   return 0;
 }
 
