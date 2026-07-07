@@ -7,7 +7,6 @@
 // --- Type Aliases ---
 
 using Bitboard = uint64_t;
-// using Move = uint16_t;
 
 // --- Constants ---
 
@@ -112,7 +111,7 @@ enum Rank : uint8_t {
 
 enum Color : uint8_t { WHITE, BLACK, COLOR_NONE = 2 };
 constexpr Color operator~(Color c) {
-    return static_cast<Color>(c ^ 1); // XOR with 1 flips 0 to 1, and 1 to 0
+  return static_cast<Color>(c ^ 1);  // XOR with 1 flips 0 to 1, and 1 to 0
 }
 
 enum PieceType : uint8_t {
@@ -225,7 +224,7 @@ inline Square msb(Bitboard bb) {
 
 // Finds the lowest set bit, completely removes it from the bitboard, and
 // returns the square
-inline Square popLsb(Bitboard &bb) {
+inline Square popLsb(Bitboard& bb) {
   Square sq = lsb(bb);
   bb &= bb - 1;  // Clear the least significant bit
   return sq;

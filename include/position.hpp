@@ -20,7 +20,7 @@ class Position {
   Square enPassantSquare{SQUARE_NONE};
   CastlingRights castlingRights{static_cast<CastlingRights>(
       WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE)};
-  
+
   // The 64-bit Zobrist hash key representing the current board state
   uint64_t hashKey{};
 
@@ -57,12 +57,11 @@ class Position {
     hashKey ^= ZOBRIST.pieceKeys[piece][sq];
   }
 
-  
   void toggleSideToMove() {
     sideToMove = ~sideToMove;
     hashKey ^= ZOBRIST.sideKey;
   }
-  
+
   void setEnPassantSquare(Square sq) {
     // XOR out the old en-passant state
     if (enPassantSquare != SQUARE_NONE) {
@@ -70,9 +69,9 @@ class Position {
     } else {
       hashKey ^= ZOBRIST.enPassantKeys[FILE_NONE];
     }
-    
+
     enPassantSquare = sq;
-    
+
     // XOR in the new en-passant state
     if (enPassantSquare != SQUARE_NONE) {
       hashKey ^= ZOBRIST.enPassantKeys[getFile(enPassantSquare)];
@@ -80,7 +79,7 @@ class Position {
       hashKey ^= ZOBRIST.enPassantKeys[FILE_NONE];
     }
   }
-  
+
   void updateCastlingRights(CastlingRights cr) {
     // XOR out the old, XOR in the new
     hashKey ^= ZOBRIST.castlingKeys[castlingRights];
@@ -89,7 +88,7 @@ class Position {
   }
 
   // --- Utilities ---
-  
+
   Piece getPieceAt(Square sq) const {
     Bitboard bb = squareBB(sq);
     for (size_t p = WHITE_PAWN; p <= BLACK_KING; ++p) {
@@ -112,9 +111,9 @@ class Position {
     }
 
     if (sideToMove == BLACK) hash ^= ZOBRIST.sideKey;
-    
+
     hash ^= ZOBRIST.castlingKeys[castlingRights];
-    
+
     if (enPassantSquare != SQUARE_NONE) {
       hash ^= ZOBRIST.enPassantKeys[getFile(enPassantSquare)];
     } else {
@@ -125,7 +124,7 @@ class Position {
   }
 
   // Set the position from a FEN string
-  void setFEN(const std::string &fen) {
+  void setFEN(const std::string& fen) {
     // Clear the current position
     pieces.fill(0);
     byColor.fill(0);
@@ -153,14 +152,15 @@ class Position {
       } else {
         Piece piece = charToPiece(c);
         if (piece != PIECE_NONE) {
-          Square sq = makeSquare(static_cast<File>(file), static_cast<Rank>(rank));
-          
+          Square sq =
+              makeSquare(static_cast<File>(file), static_cast<Rank>(rank));
+
           // Place piece physically without triggering incremental hash updates
           Bitboard bb = squareBB(sq);
           pieces[piece] |= bb;
           byColor[static_cast<Color>(piece / 6)] |= bb;
           byType[static_cast<PieceType>(piece % 6)] |= bb;
-          
+
           file++;
         }
       }

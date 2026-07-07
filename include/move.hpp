@@ -81,14 +81,16 @@ class Move {
   }
 };
 
-// Represents a null/invalid move (from A1 to A1 with quiet flag is equivalent to 0)
+// Represents a null/invalid move (from A1 to A1 with quiet flag is equivalent
+// to 0)
 inline constexpr Move MOVE_NONE = Move();
 
 // --- Move List ---
 // A highly optimized, fixed-size container for move generation.
-// This completely avoids heap allocations (std::vector) during the search hot path.
+// This completely avoids heap allocations (std::vector) during the search hot
+// path.
 
-constexpr size_t MAX_MOVES = 256; // Theoretical maximum is ~218
+constexpr size_t MAX_MOVES = 256;  // Theoretical maximum is ~218
 
 class MoveList {
  private:
@@ -99,24 +101,21 @@ class MoveList {
   MoveList() = default;
 
   void push_back(Move move) {
-    // In a release build, we skip boundary checking for maximum speed, 
+    // In a release build, we skip boundary checking for maximum speed,
     // as 256 is safely above the theoretical maximum of chess moves.
     moves[count++] = move;
   }
 
-  size_t size() const { 
-    return count; 
-  }
+  size_t size() const { return count; }
 
-  bool empty() const {
-    return count == 0;
-  }
+  bool empty() const { return count == 0; }
 
   // Array access operators
   Move& operator[](size_t index) { return moves[index]; }
   const Move& operator[](size_t index) const { return moves[index]; }
 
-  // C++ Iterator support allowing range-based loops: for(Move m : moveList) { ... }
+  // C++ Iterator support allowing range-based loops: for(Move m : moveList) {
+  // ... }
   auto begin() { return moves.begin(); }
   auto end() { return moves.begin() + count; }
   auto begin() const { return moves.begin(); }
