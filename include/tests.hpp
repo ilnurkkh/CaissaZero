@@ -22,4 +22,7 @@ void testCheckpoint1_5();
 // Phase 1 Integration Test
 void runPhase1ExitGate();
 
+// Phase 2 Component Tests
+void testCheckpoint2_2();
+
 }  // namespace Tests

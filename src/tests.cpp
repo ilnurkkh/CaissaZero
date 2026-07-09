@@ -7,6 +7,7 @@
 
 #include "attacks.hpp"
 #include "move.hpp"
+#include "movegen.hpp"
 #include "position.hpp"
 #include "types.hpp"
 
@@ -273,7 +274,65 @@ void runPhase1ExitGate() {
   uint64_t hash3 = pos.getHashKey();
   assert(hash3 != hash2 && hash3 != hash1 && hash3 != hash0);
 
-  std::cout << "-> All Integration Assertions Passed\n";
+  std::cout << "-> All Integration Assertions Passed\n\n\n";
+}
+
+void testCheckpoint2_2() {
+  std::cout << "[Checkpoint 2.2] Leaper Move Generation (Kings & Knights)\n";
+
+  Position pos;
+  MoveList list;
+
+  // --- Setup 1: Raw Mobility Counts ---
+  pos.setFEN("4k3/8/8/3N4/8/8/8/4K2N w - - 0 1");
+
+  generateKnightMoves<WHITE>(pos, list);
+  
+  int d5Moves = 0;
+  int h1Moves = 0;
+  for (const Move& m : list) {
+    if (m.getFrom() == D5) d5Moves++;
+    if (m.getFrom() == H1) h1Moves++;
+  }
+  
+  assert(list.size() == 10 && "Total knight moves should be 10");
+  assert(d5Moves == 8 && "D5 Knight should have exactly 8 moves");
+  assert(h1Moves == 2 && "H1 Knight should have exactly 2 moves");
+
+  MoveList kingList;
+  generateKingMoves<WHITE>(pos, kingList);
+  assert(kingList.size() == 5 && "E1 King on the edge should have exactly 5 moves");
+
+  // --- Setup 2: Capture Flagging & Friendly-Fire Masking ---
+  // We place a White Knight on D5. 
+  // We place a White Pawn on E3 (Friendly piece, should be blocked).
+  // We place a Black Pawn on C7 (Enemy piece, should be flagged CAPTURE).
+  pos.setFEN("8/2p5/8/3N4/8/4P3/8/8 w - - 0 1");
+  MoveList combatList;
+  
+  generateKnightMoves<WHITE>(pos, combatList);
+  
+  bool captureFound = false;
+  bool friendlyFireFound = false;
+
+  for (const Move& m : combatList) {
+    // Check if the generator incorrectly allowed a move to the friendly E3 pawn
+    if (m.getTo() == E3) {
+      friendlyFireFound = true;
+    }
+    // Check if the move to the enemy C7 pawn is correctly flagged
+    if (m.getTo() == C7) {
+      assert(m.isCapture() && "Move to C7 should have FLAG_CAPTURE set");
+      captureFound = true;
+    } else {
+      assert(!m.isCapture() && "Non-capture move has FLAG_CAPTURE set");
+    }
+  }
+
+  assert(!friendlyFireFound && "Knight generated a move onto a friendly piece (E3)");
+  assert(captureFound && "Knight failed to generate a capture move onto an enemy piece (C7)");
+
+  std::cout << "-> Passed\n\n";
 }
 
 }  // namespace Tests

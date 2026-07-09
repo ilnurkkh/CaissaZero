@@ -16,5 +16,8 @@ int main() {
   // Phase 1 Integration Test
   Tests::runPhase1ExitGate();
 
+  // Phase 2 Unit Tests
+  Tests::testCheckpoint2_2();
+
   return 0;
 }
