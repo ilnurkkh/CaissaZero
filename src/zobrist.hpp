@@ -5,7 +5,7 @@
 
 #include "types.hpp"
 
-inline constexpr uint64_t ZOBRIST_SEED = 0x123456789ABCDEF0ULL;
+inline constexpr uint64_t ZOBRIST_SEED = 0x8A25F71B3C9DE046ULL;
 
 struct Zobrist {
     std::array<std::array<uint64_t, BOARD_SQUARE_COUNT>, PIECE_NONE> pieceKeys{};

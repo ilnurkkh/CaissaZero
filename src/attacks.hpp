@@ -4,48 +4,36 @@
 
 #include "types.hpp"
 
-// Generates a bitboard of all squares attacked by a king on the given square
 constexpr Bitboard maskKingAttacks(Square sq) {
   Bitboard king{squareBB(sq)};
 
-  // Generate all possible king moves by shifting the bitboard in all 8
-  // directions
-  Bitboard west = (king >> 1) & NOT_H_FILE;
-  Bitboard east = (king << 1) & NOT_A_FILE;
-  Bitboard north = king << 8;
-  Bitboard south = king >> 8;
-  Bitboard northWest = (king << 7) & NOT_H_FILE;
-  Bitboard northEast = (king << 9) & NOT_A_FILE;
-  Bitboard southWest = (king >> 9) & NOT_H_FILE;
-  Bitboard southEast = (king >> 7) & NOT_A_FILE;
+  Bitboard w = (king >> 1) & NOT_H_FILE;
+  Bitboard e = (king << 1) & NOT_A_FILE;
+  Bitboard n = king << 8;
+  Bitboard s = king >> 8;
+  Bitboard nw = (king << 7) & NOT_H_FILE;
+  Bitboard ne = (king << 9) & NOT_A_FILE;
+  Bitboard sw = (king >> 9) & NOT_H_FILE;
+  Bitboard se = (king >> 7) & NOT_A_FILE;
 
-  // Return the combined bitboard of all attacked squares
-  return west | east | north | south | northWest | northEast | southWest |
-         southEast;
+  return w | e | n | s | nw | ne | sw | se;
 }
 
-// Generates a bitboard of all squares attacked by a knight on the given square
 constexpr Bitboard maskKnightAttacks(Square sq) {
   Bitboard knight{squareBB(sq)};
 
-  // Generate all possible knight moves by shifting the bitboard in all 8
-  // L-shaped directions
-  Bitboard northNorthWest = (knight << 15) & NOT_H_FILE;
-  Bitboard northNorthEast = (knight << 17) & NOT_A_FILE;
-  Bitboard southSouthWest = (knight >> 17) & NOT_H_FILE;
-  Bitboard southSouthEast = (knight >> 15) & NOT_A_FILE;
-  Bitboard westWestNorth = (knight << 6) & NOT_GH_FILE;
-  Bitboard westWestSouth = (knight >> 10) & NOT_GH_FILE;
-  Bitboard eastEastNorth = (knight << 10) & NOT_AB_FILE;
-  Bitboard eastEastSouth = (knight >> 6) & NOT_AB_FILE;
+  Bitboard nnw = (knight << 15) & NOT_H_FILE;
+  Bitboard nne = (knight << 17) & NOT_A_FILE;
+  Bitboard ssw = (knight >> 17) & NOT_H_FILE;
+  Bitboard sse = (knight >> 15) & NOT_A_FILE;
+  Bitboard wwn = (knight << 6) & NOT_GH_FILE;
+  Bitboard wws = (knight >> 10) & NOT_GH_FILE;
+  Bitboard een = (knight << 10) & NOT_AB_FILE;
+  Bitboard ees = (knight >> 6) & NOT_AB_FILE;
 
-  // Return the combined bitboard of all attacked squares
-  return northNorthWest | northNorthEast | southSouthWest | southSouthEast |
-         westWestNorth | westWestSouth | eastEastNorth | eastEastSouth;
+  return nnw | nne | ssw | sse | wwn | wws | een | ees;
 }
 
-// Generates a bitboard of all squares attacked by a pawn of the given color on
-// the given square
 constexpr Bitboard maskPawnAttacks(Color color, Square sq) {
   Bitboard pawn{squareBB(sq)};
   Bitboard attacks{};
@@ -76,13 +64,14 @@ constexpr Bitboard maskBetween(Square sq1, Square sq2) {
   int dr{r2 - r1};
   int df{f2 - f1};
 
-  // Check if they are aligned on the same Rank, File, or Diagonal
+  // Rays are only valid on shared ranks, files, or diagonals
   if (dr != 0 && df != 0 && (dr != df && dr != -df)) {
-    return 0ULL;  // Not aligned, return an empty bitboard
+    return 0ULL;
   }
 
-  int stepR{(dr == 0) ? 0 : (dr > 0 ? 1 : -1)};
-  int stepF{(df == 0) ? 0 : (df > 0 ? 1 : -1)};
+  auto sign = [](int val) { return (0 < val) - (val < 0); };
+  int stepR = sign(dr);
+  int stepF = sign(df);
 
   Bitboard bb{};
   int r{r1 + stepR};
@@ -114,11 +103,12 @@ constexpr Bitboard maskLine(Square sq1, Square sq2) {
 
   // Check alignment
   if (dr != 0 && df != 0 && (dr != df && dr != -df)) {
-    return 0ULL;  // Not aligned, return an empty bitboard
+    return 0ULL;
   }
 
-  int stepR{(dr == 0) ? 0 : (dr > 0 ? 1 : -1)};
-  int stepF{(df == 0) ? 0 : (df > 0 ? 1 : -1)};
+  auto sign = [](int val) { return (0 < val) - (val < 0); };
+  int stepR = sign(dr);
+  int stepF = sign(df);
 
   Bitboard bb{};
 
@@ -200,7 +190,7 @@ precomputeLine() {
 constexpr std::array<Bitboard, BOARD_SQUARE_COUNT> KING_ATTACKS{
     precomputeKingAttacks()};
 constexpr std::array<Bitboard, BOARD_SQUARE_COUNT> KNIGHT_ATTACKS{
-    precomputeKnightAttacks()};
+    precomputeKnightAttacks()};    
 constexpr std::array<std::array<Bitboard, BOARD_SQUARE_COUNT>, COLOR_NONE>
     PAWN_ATTACKS{precomputePawnAttacks()};
 constexpr std::array<std::array<Bitboard, BOARD_SQUARE_COUNT>,

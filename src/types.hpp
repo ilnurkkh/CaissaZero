@@ -174,19 +174,16 @@ constexpr std::array<Bitboard, 8> FILE_BB = {
     0x8080808080808080ULL   // File H
 };
 
-// Board wrap prevention masks
 constexpr Bitboard NOT_A_FILE = ~FILE_BB[FILE_A];
 constexpr Bitboard NOT_H_FILE = ~FILE_BB[FILE_H];
 constexpr Bitboard NOT_AB_FILE = ~(FILE_BB[FILE_A] | FILE_BB[FILE_B]);
 constexpr Bitboard NOT_GH_FILE = ~(FILE_BB[FILE_G] | FILE_BB[FILE_H]);
 
-// Board pattern masks
 constexpr Bitboard LIGHT_SQUARES_BB = 0x55AA55AA55AA55AAULL;
 constexpr Bitboard DARK_SQUARES_BB = 0xAA55AA55AA55AA55ULL;
 constexpr Bitboard MAIN_DIAGONAL_BB = 0x8040201008040201ULL;  // A1 to H8
 constexpr Bitboard ANTI_DIAGONAL_BB = 0x0102040810204080ULL;  // H1 to A8
 
-// Board zone masks
 constexpr Bitboard QUEENSIDE_BB =
     FILE_BB[FILE_A] | FILE_BB[FILE_B] | FILE_BB[FILE_C] | FILE_BB[FILE_D];
 constexpr Bitboard KINGSIDE_BB =
@@ -199,25 +196,20 @@ constexpr Bitboard EXTENDED_CENTER_BB =
     squareBB(E5) | squareBB(F5) | squareBB(C6) | squareBB(D6) | squareBB(E6) |
     squareBB(F6);
 
-// Finds the index of the lowest set bit (the first piece on the board)
 inline Square lsb(Bitboard bb) {
   return static_cast<Square>(__builtin_ctzll(bb));
 }
 
-// Finds the index of the highest set bit
 inline Square msb(Bitboard bb) {
   return static_cast<Square>(63 ^ __builtin_clzll(bb));
 }
 
-// Finds the lowest set bit, completely removes it from the bitboard, and
-// returns the square
 inline Square popLsb(Bitboard& bb) {
   Square sq = lsb(bb);
   bb &= bb - 1;  // Clear the least significant bit
   return sq;
 }
 
-// Instantly counts set bits (how many pieces are on this board)
 inline int popCount(Bitboard bb) { return __builtin_popcountll(bb); }
 
 // Converts a character to a piece
