@@ -130,3 +130,40 @@ inline void generatePawnMoves(const Position& pos, MoveList& list) {
     }
   }
 }
+
+template <Color Us, PieceType Pt>
+inline void generateSliderMoves(const Position& pos, MoveList& list) {
+  constexpr Color Them = ~Us;
+  constexpr Piece piece = (Us == WHITE) ? 
+                          (Pt == ROOK ? WHITE_ROOK : (Pt == BISHOP ? WHITE_BISHOP : WHITE_QUEEN)) :
+                          (Pt == ROOK ? BLACK_ROOK : (Pt == BISHOP ? BLACK_BISHOP : BLACK_QUEEN));
+
+  const Bitboard occ = pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
+  const Bitboard enemy = pos.getPiecesByColor(Them);
+  Bitboard sliders = pos.getPieces(piece);
+
+  while (sliders) {
+    Square from = popLsb(sliders);
+    Bitboard attacks = 0;
+
+    // Evaluated at compile-time, zero runtime branching overhead
+    if constexpr (Pt == ROOK)        attacks = getRookAttacks(from, occ);
+    else if constexpr (Pt == BISHOP) attacks = getBishopAttacks(from, occ);
+    else if constexpr (Pt == QUEEN)  attacks = getQueenAttacks(from, occ);
+
+    attacks &= ~pos.getPiecesByColor(Us);
+
+    while (attacks) {
+      Square to = popLsb(attacks);
+      list.push_back(Move(from, to, (enemy & squareBB(to)) ? FLAG_CAPTURE : FLAG_QUIET));
+    }
+  }
+}
+
+// Global entry point for all sliding pieces
+template <Color Us>
+inline void generateSlidingMoves(const Position& pos, MoveList& list) {
+  generateSliderMoves<Us, BISHOP>(pos, list);
+  generateSliderMoves<Us, ROOK>(pos, list);
+  generateSliderMoves<Us, QUEEN>(pos, list);
+}

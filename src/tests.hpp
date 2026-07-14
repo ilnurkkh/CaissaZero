@@ -19,5 +19,6 @@ void runPhase1ExitGate();
 
 void testCheckpoint2_2();
 void testCheckpoint2_3();
+void testCheckpoint2_4();
 
 }

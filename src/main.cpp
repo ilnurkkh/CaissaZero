@@ -15,6 +15,7 @@ int main() {
 
   Tests::testCheckpoint2_2();
   Tests::testCheckpoint2_3();
+  Tests::testCheckpoint2_4();
 
   return 0;
 }

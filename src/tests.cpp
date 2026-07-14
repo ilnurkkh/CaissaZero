@@ -13,6 +13,7 @@
 
 namespace Tests {
 
+// Renders Little-Endian Rank-File (LERF) bitboards for visual debugging
 void printBB(Bitboard bb) {
   for (int rank = RANK_8; rank >= RANK_1; rank--) {
     for (int file = FILE_A; file <= FILE_H; file++) {
@@ -54,27 +55,35 @@ void printPosition(const Position& pos) {
             << (pos.getSideToMove() == WHITE ? "White" : "Black") << "\n\n";
 }
 
+// Cross-verifies the 1D Mailbox array state against the 64-bit occupancy layers
 void verifyPositionIntegrity(const Position& pos) {
   const Bitboard whiteOccupancy = pos.getPiecesByColor(WHITE);
   const Bitboard blackOccupancy = pos.getPiecesByColor(BLACK);
   const Bitboard allPieces = whiteOccupancy | blackOccupancy;
 
   assert(popCount(allPieces) == 32 && "Popcount mismatch");
+
+  // Detects incremental hash drift by comparing against a full recomputation
   assert(pos.getHashKey() != 0ULL && "Zero hash detected");
-  assert(pos.getHashKey() == pos.computeHashFromScratch() && "Incremental hash desync");
+  assert(pos.getHashKey() == pos.computeHashFromScratch() &&
+         "Incremental hash desync");
 
   for (size_t sq = 0; sq < BOARD_SQUARE_COUNT; ++sq) {
     Square square = static_cast<Square>(sq);
     Piece p = pos.getPieceAt(square);
 
     if (p != PIECE_NONE) {
-      assert((pos.getPieces(p) & squareBB(square)) != 0 && "Piece bitboard desync");
+      assert((pos.getPieces(p) & squareBB(square)) != 0 &&
+             "Piece bitboard desync");
       Color c = static_cast<Color>(p / 6);
-      assert((pos.getPiecesByColor(c) & squareBB(square)) != 0 && "Color bitboard desync");
+      assert((pos.getPiecesByColor(c) & squareBB(square)) != 0 &&
+             "Color bitboard desync");
       PieceType pt = static_cast<PieceType>(p % 6);
-      assert((pos.getPiecesByType(pt) & squareBB(square)) != 0 && "Type bitboard desync");
+      assert((pos.getPiecesByType(pt) & squareBB(square)) != 0 &&
+             "Type bitboard desync");
     } else {
-      assert((allPieces & squareBB(square)) == 0 && "Occupancy bitboard desync");
+      assert((allPieces & squareBB(square)) == 0 &&
+             "Occupancy bitboard desync");
     }
   }
 }
@@ -82,6 +91,7 @@ void verifyPositionIntegrity(const Position& pos) {
 void testCheckpoint1_1() {
   std::cout << "[Checkpoint 1.1] Bitboard Basics\n";
 
+  // Validates hardware LSB bit-scan ordering
   Bitboard diag = MAIN_DIAGONAL_BB;
   Square firstSq = popLsb(diag);
   assert(firstSq == A1);
@@ -91,7 +101,7 @@ void testCheckpoint1_1() {
     popLsb(diag);
     remainingPops++;
   }
-  
+
   assert(remainingPops == 7);
   assert(popCount(RANK_BB[RANK_1]) == 8);
 
@@ -105,19 +115,23 @@ void testCheckpoint1_2() {
   pos.setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
   assert(popCount(pos.getPieces(WHITE_PAWN)) == 8);
-  
-  Bitboard allPieces = pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
+
+  Bitboard allPieces =
+      pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
   assert(popCount(allPieces) == 32);
   assert(pos.getPieceAt(E1) == WHITE_KING);
   assert(pos.getPieceAt(E8) == BLACK_KING);
   assert(pos.getEnPassantSquare() == SQUARE_NONE);
-  assert(pos.getCastlingRights() == (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE));
+  assert(pos.getCastlingRights() ==
+         (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE));
 
-  pos.setFEN("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+  pos.setFEN(
+      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
   allPieces = pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
-  
+
   assert(popCount(allPieces) == 32);
-  assert(pos.getCastlingRights() == (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE));
+  assert(pos.getCastlingRights() ==
+         (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE));
 
   std::cout << "-> Passed\n\n";
 }
@@ -132,10 +146,12 @@ void testCheckpoint1_3() {
   assert(popCount(nD4) == 8);
 
   Bitboard nG1 = KNIGHT_ATTACKS[G1];
-  assert(popCount(nG1) == 3 && nG1 == (squareBB(F3) | squareBB(H3) | squareBB(E2)));
+  assert(popCount(nG1) == 3 &&
+         nG1 == (squareBB(F3) | squareBB(H3) | squareBB(E2)));
 
   Bitboard kA1 = KING_ATTACKS[A1];
-  assert(popCount(kA1) == 3 && kA1 == (squareBB(A2) | squareBB(B1) | squareBB(B2)));
+  assert(popCount(kA1) == 3 &&
+         kA1 == (squareBB(A2) | squareBB(B1) | squareBB(B2)));
 
   Bitboard pE4 = PAWN_ATTACKS[WHITE][E4];
   assert(popCount(pE4) == 2 && pE4 == (squareBB(D5) | squareBB(F5)));
@@ -156,6 +172,7 @@ void testCheckpoint1_4() {
   assert(initialHash != 0ULL);
   assert(initialHash == pos.computeHashFromScratch());
 
+  // Mutate state incrementally
   pos.removePiece(WHITE_PAWN, E2);
   pos.setPiece(WHITE_PAWN, E4);
   pos.setEnPassantSquare(E3);
@@ -165,6 +182,7 @@ void testCheckpoint1_4() {
   assert(moveHash != initialHash);
   assert(moveHash == pos.computeHashFromScratch());
 
+  // Simulates a full unmake to guarantee perfect XOR reversibility
   pos.toggleSideToMove();
   pos.setEnPassantSquare(SQUARE_NONE);
   pos.removePiece(WHITE_PAWN, E4);
@@ -178,6 +196,7 @@ void testCheckpoint1_4() {
 void testCheckpoint1_5() {
   std::cout << "[Checkpoint 1.5] Move Encoding\n";
 
+  // Validates struct packing to prevent transposition table bloat
   assert(sizeof(Move) == 2 && "Move struct exceeds 16 bits");
 
   Move m_e2e4(E2, E4);
@@ -251,14 +270,15 @@ void testCheckpoint2_2() {
 
   pos.setFEN("4k3/8/8/3N4/8/8/8/4K2N w - - 0 1");
   generateKnightMoves<WHITE>(pos, list);
-  
+
   int d5Moves = 0;
   int h1Moves = 0;
   for (const Move& m : list) {
     if (m.getFrom() == D5) d5Moves++;
     if (m.getFrom() == H1) h1Moves++;
   }
-  
+
+  // Verifies corner mobility bounds to prevent off-board bit shift wrap-around
   assert(list.size() == 10 && "Knight mobility count mismatch");
   assert(d5Moves == 8 && "D5 Knight open mobility mismatch");
   assert(h1Moves == 2 && "H1 Knight corner mobility mismatch");
@@ -270,7 +290,7 @@ void testCheckpoint2_2() {
   pos.setFEN("8/2p5/8/3N4/8/4P3/8/8 w - - 0 1");
   MoveList combatList;
   generateKnightMoves<WHITE>(pos, combatList);
-  
+
   bool captureFound = false;
   bool friendlyFireFound = false;
 
@@ -311,16 +331,18 @@ void testCheckpoint2_3() {
   assert(list.size() == 4 && "A7 pawn did not yield exactly 4 promotions");
   for (const Move& m : list) {
     assert(m.isPromotion() && "Promotion flag missing");
-    assert(m.getFlags() != FLAG_DOUBLE_PAWN_PUSH && "Double push flag incorrectly set on rank 7");
+    assert(m.getFlags() != FLAG_DOUBLE_PAWN_PUSH &&
+           "Double push flag incorrectly set on rank 7");
   }
 
   list = MoveList();
   pos.setFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
   generatePawnMoves<WHITE>(pos, list);
-  
+
   bool epFound = false;
   for (const Move& m : list) {
-    if (m.getFrom() == E5 && m.getTo() == F6 && m.getFlags() == FLAG_EP_CAPTURE) {
+    if (m.getFrom() == E5 && m.getTo() == F6 &&
+        m.getFlags() == FLAG_EP_CAPTURE) {
       epFound = true;
       break;
     }
@@ -331,12 +353,14 @@ void testCheckpoint2_3() {
   pos.setFEN("8/8/8/8/p7/8/P7/8 w - - 0 1");
   generatePawnMoves<WHITE>(pos, list);
   assert(list.size() == 1 && "Generator incorrectly bypassed blocking piece");
-  assert(list[0].getTo() == A3 && "Only valid move should be single push to A3");
+  assert(list[0].getTo() == A3 &&
+         "Only valid move should be single push to A3");
 
   list = MoveList();
   pos.setFEN("r1r5/1P6/8/8/8/8/8/8 w - - 0 1");
   generatePawnMoves<WHITE>(pos, list);
-  
+
+  // 4 push promos (B8) + 4 capture promos (A8) + 4 capture promos (C8)
   assert(list.size() == 12 && "Capture-promotion move count mismatch");
 
   int pushPromos = 0, capPromos = 0;
@@ -344,7 +368,74 @@ void testCheckpoint2_3() {
     if (m.getTo() == B8) pushPromos++;
     if (m.getTo() == A8 || m.getTo() == C8) capPromos++;
   }
-  assert(pushPromos == 4 && capPromos == 8 && "Promotion flag distribution mismatch");
+  assert(pushPromos == 4 && capPromos == 8 &&
+         "Promotion flag distribution mismatch");
+
+  std::cout << "-> Passed\n\n";
+}
+
+void testCheckpoint2_4() {
+  std::cout << "[Checkpoint 2.4] Sliding Piece Ray-Casting\n";
+
+  Position pos;
+  MoveList list;
+
+  pos.setFEN("8/8/8/3R4/8/8/8/8 w - - 0 1");
+  generateSlidingMoves<WHITE>(pos, list);
+  assert(list.size() == 14 && "Lone rook open mobility mismatch");
+
+  list = MoveList();
+  pos.setFEN("8/8/8/3B4/8/8/8/8 w - - 0 1");
+  generateSlidingMoves<WHITE>(pos, list);
+  assert(list.size() == 13 && "Lone bishop open mobility mismatch");
+
+  // Validates early-exit on friendly blockers
+  list = MoveList();
+  pos.setFEN("8/3P4/8/3R4/8/8/8/8 w - - 0 1");
+  generateSlidingMoves<WHITE>(pos, list);
+
+  bool d6Found = false, d7Found = false, d8Found = false;
+  for (const Move& m : list) {
+    if (m.getTo() == D6) d6Found = true;
+    if (m.getTo() == D7) d7Found = true;
+    if (m.getTo() == D8) d8Found = true;
+  }
+
+  assert(d6Found && "Rook failed to step before friendly blocker");
+  assert(!d7Found && "Rook incorrectly targeted friendly piece");
+  assert(!d8Found && "Rook incorrectly jumped over friendly piece");
+
+  // Validates inclusive-exit on enemy captures
+  list = MoveList();
+  pos.setFEN("8/3p4/8/3R4/8/8/8/8 w - - 0 1");
+  generateSlidingMoves<WHITE>(pos, list);
+
+  d6Found = d7Found = d8Found = false;
+  bool captureFlagged = false;
+  for (const Move& m : list) {
+    if (m.getTo() == D6) d6Found = true;
+    if (m.getTo() == D7) {
+      d7Found = true;
+      captureFlagged = m.isCapture();
+    }
+    if (m.getTo() == D8) d8Found = true;
+  }
+
+  assert(d6Found && "Rook failed to step before enemy blocker");
+  assert(d7Found && captureFlagged && "Rook failed to capture enemy blocker");
+  assert(!d8Found && "Rook incorrectly jumped over enemy blocker");
+
+  // A1 Rook boxed in by friendly pawns on A2 and B1
+  // Confirms the ray does not wrap horizontally across the A/H files
+  list = MoveList();
+  pos.setFEN("8/8/8/8/8/8/P7/RP6 w - - 0 1");
+  generateSlidingMoves<WHITE>(pos, list);
+  assert(list.size() == 0 && "Corner rook generated illegal wraparound moves");
+
+  list = MoveList();
+  pos.setFEN("8/8/8/3Q4/8/8/8/8 w - - 0 1");
+  generateSlidingMoves<WHITE>(pos, list);
+  assert(list.size() == 27 && "Lone queen mobility mismatch (14 + 13)");
 
   std::cout << "-> Passed\n\n";
 }

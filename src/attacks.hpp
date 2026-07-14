@@ -199,3 +199,48 @@ constexpr std::array<std::array<Bitboard, BOARD_SQUARE_COUNT>,
 constexpr std::array<std::array<Bitboard, BOARD_SQUARE_COUNT>,
                      BOARD_SQUARE_COUNT>
     LINE_BB{precomputeLine()};
+
+constexpr std::array<int, 4> ROOK_DIRS = { 8, -8, 1, -1 };
+constexpr std::array<int, 4> BISHOP_DIRS = { 9, 7, -7, -9 };
+
+inline bool canStep(Square sq, int dir) {
+  const File f = getFile(sq);
+  const Rank r = getRank(sq);
+
+  switch (dir) {
+    case 8:  return r != RANK_8;
+    case -8: return r != RANK_1;
+    case 1:  return f != FILE_H;
+    case -1: return f != FILE_A;
+    case 9:  return r != RANK_8 && f != FILE_H;
+    case 7:  return r != RANK_8 && f != FILE_A;
+    case -7: return r != RANK_1 && f != FILE_H;
+    case -9: return r != RANK_1 && f != FILE_A;
+    default: return false;
+  }
+}
+
+inline Bitboard rayAttacks(Square from, std::span<const int> dirs, Bitboard occ) {
+  Bitboard attacks = 0;
+  for (const int dir : dirs) {
+    Square sq = from;
+    while (canStep(sq, dir)) {
+      sq = static_cast<Square>(sq + dir);
+      attacks |= squareBB(sq);
+      if (occ & squareBB(sq)) break;
+    }
+  }
+  return attacks;
+}
+
+inline Bitboard getRookAttacks(Square s, Bitboard occ) {
+  return rayAttacks(s, ROOK_DIRS, occ);
+}
+
+inline Bitboard getBishopAttacks(Square s, Bitboard occ) {
+  return rayAttacks(s, BISHOP_DIRS, occ);
+}
+
+inline Bitboard getQueenAttacks(Square s, Bitboard occ) {
+  return getRookAttacks(s, occ) | getBishopAttacks(s, occ);
+}
