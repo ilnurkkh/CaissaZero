@@ -87,8 +87,6 @@ class Position {
     hashKey ^= ZOBRIST.castlingKeys[castlingRights];
   }
 
-  // --- Utilities ---
-
   Piece getPieceAt(Square sq) const {
     Bitboard bb = squareBB(sq);
     for (size_t p = WHITE_PAWN; p <= BLACK_KING; ++p) {

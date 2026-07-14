@@ -4,8 +4,6 @@
 
 #include "types.hpp"
 
-// --- ATTACK TABLES ---
-
 // Generates a bitboard of all squares attacked by a king on the given square
 constexpr Bitboard maskKingAttacks(Square sq) {
   Bitboard king{squareBB(sq)};
@@ -145,8 +143,6 @@ constexpr Bitboard maskLine(Square sq1, Square sq2) {
   return bb;
 }
 
-// --- COMPILE-TIME TABLE INITIALIZATION ---
-
 constexpr std::array<Bitboard, BOARD_SQUARE_COUNT> precomputeKingAttacks() {
   std::array<Bitboard, BOARD_SQUARE_COUNT> table{};
   for (size_t sq{}; sq < BOARD_SQUARE_COUNT; ++sq) {
@@ -200,8 +196,6 @@ precomputeLine() {
   }
   return table;
 }
-
-// --- GLOBAL PRECOMPUTED TABLES ---
 
 constexpr std::array<Bitboard, BOARD_SQUARE_COUNT> KING_ATTACKS{
     precomputeKingAttacks()};

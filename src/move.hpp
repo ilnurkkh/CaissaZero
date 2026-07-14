@@ -31,8 +31,6 @@ class Move {
   uint16_t data;  // 16 bits: [from(6) | to(6) | flags(4)]
 
  public:
-  // --- Constructors ---
-
   constexpr Move() : data(0) {}
 
   constexpr Move(Square from, Square to, MoveFlag flags = FLAG_QUIET)
@@ -55,8 +53,6 @@ class Move {
 
   constexpr uint16_t getRaw() const { return data; }
 
-  // --- Utilities ---
-
   // A move is a capture if the 3rd flag bit (value 4) is set.
   constexpr bool isCapture() const { return data & 4; }
 
@@ -71,8 +67,6 @@ class Move {
     return static_cast<PieceType>((data & 3) + KNIGHT);
   }
 
-  // --- Operators ---
-
   constexpr bool operator==(const Move& other) const {
     return data == other.data;
   }
@@ -85,11 +79,6 @@ class Move {
 // to 0)
 inline constexpr Move MOVE_NONE = Move();
 
-// --- Move List ---
-// A highly optimized, fixed-size container for move generation.
-// This completely avoids heap allocations (std::vector) during the search hot
-// path.
-
 constexpr size_t MAX_MOVES = 256;  // Theoretical maximum is ~218
 
 class MoveList {
@@ -101,8 +90,8 @@ class MoveList {
   MoveList() = default;
 
   void push_back(Move move) {
-    // In a release build, we skip boundary checking for maximum speed,
-    // as 256 is safely above the theoretical maximum of chess moves.
+    // Skip boundary checking for maximum speed, as 256 is safely above the
+    // theoretical maximum of chess moves.
     moves[count++] = move;
   }
 
@@ -114,8 +103,7 @@ class MoveList {
   Move& operator[](size_t index) { return moves[index]; }
   const Move& operator[](size_t index) const { return moves[index]; }
 
-  // C++ Iterator support allowing range-based loops: for(Move m : moveList) {
-  // ... }
+  // C++ Iterator support allowing range-based loops
   auto begin() { return moves.begin(); }
   auto end() { return moves.begin() + count; }
   auto begin() const { return moves.begin(); }

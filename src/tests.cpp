@@ -335,4 +335,4 @@ void testCheckpoint2_2() {
   std::cout << "-> Passed\n\n";
 }
 
-}  // namespace Tests
+}

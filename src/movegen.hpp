@@ -8,9 +8,6 @@
 // isLegal(pos, move)                  -> applies move, checks king safety, unmakes
 // generateLegalMoves(pos, list)       -> pseudo-legal generation + isLegal filter
 
-
-// --- Leaper Move Generation ---
-
 template <Color Us>
 inline void generateKnightMoves(const Position& pos, MoveList& list) {
   constexpr Color Them = ~Us;

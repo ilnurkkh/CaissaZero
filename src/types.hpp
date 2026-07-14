@@ -4,17 +4,11 @@
 #include <cstdint>
 #include <string_view>
 
-// --- Type Aliases ---
-
 using Bitboard = uint64_t;
-
-// --- Constants ---
 
 constexpr int BOARD_SQUARE_COUNT = 64;
 constexpr std::string_view STARTING_FEN =
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-// --- Enums ---
 
 // Little-endian rank-file mapping for squares
 enum Square : uint8_t {
@@ -148,8 +142,6 @@ enum CastlingRights : uint8_t {
   BLACK_QUEENSIDE = 0b1000
 };
 
-// --- Square Decomposition ---
-
 constexpr File getFile(Square sq) { return static_cast<File>(sq & 7); }
 
 constexpr Rank getRank(Square sq) { return static_cast<Rank>(sq >> 3); }
@@ -158,10 +150,7 @@ constexpr Square makeSquare(File file, Rank rank) {
   return static_cast<Square>((rank << 3) | file);
 }
 
-// --- Square Bitboard Primitive ---
 constexpr Bitboard squareBB(Square sq) { return 1ULL << sq; }
-
-// --- Precomputed Bitboard Masks ---
 
 constexpr std::array<Bitboard, 8> RANK_BB = {
     0x00000000000000FFULL,  // Rank 1
@@ -210,8 +199,6 @@ constexpr Bitboard EXTENDED_CENTER_BB =
     squareBB(E5) | squareBB(F5) | squareBB(C6) | squareBB(D6) | squareBB(E6) |
     squareBB(F6);
 
-// --- Bit Manipulation API ---
-
 // Finds the index of the lowest set bit (the first piece on the board)
 inline Square lsb(Bitboard bb) {
   return static_cast<Square>(__builtin_ctzll(bb));
@@ -232,8 +219,6 @@ inline Square popLsb(Bitboard& bb) {
 
 // Instantly counts set bits (how many pieces are on this board)
 inline int popCount(Bitboard bb) { return __builtin_popcountll(bb); }
-
-// --- Other Utility Functions ---
 
 // Converts a character to a piece
 constexpr Piece charToPiece(char c) {
