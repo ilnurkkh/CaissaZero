@@ -14,6 +14,7 @@ int main() {
   Tests::runPhase1ExitGate();
 
   Tests::testCheckpoint2_2();
+  Tests::testCheckpoint2_3();
 
   return 0;
 }

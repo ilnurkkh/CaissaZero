@@ -55,36 +55,26 @@ void printPosition(const Position& pos) {
 }
 
 void verifyPositionIntegrity(const Position& pos) {
-  Bitboard whiteOccupancy = pos.getPiecesByColor(WHITE);
-  Bitboard blackOccupancy = pos.getPiecesByColor(BLACK);
-  Bitboard allPieces = whiteOccupancy | blackOccupancy;
+  const Bitboard whiteOccupancy = pos.getPiecesByColor(WHITE);
+  const Bitboard blackOccupancy = pos.getPiecesByColor(BLACK);
+  const Bitboard allPieces = whiteOccupancy | blackOccupancy;
 
-  // Validate piece count (applicable for our standard test sequences)
-  assert(popCount(allPieces) == 32 &&
-         "Popcount mismatch: pieces duplicated or deleted");
+  assert(popCount(allPieces) == 32 && "Popcount mismatch");
+  assert(pos.getHashKey() != 0ULL && "Zero hash detected");
+  assert(pos.getHashKey() == pos.computeHashFromScratch() && "Incremental hash desync");
 
-  // Validate Zobrist hash integrity against a full recomputation
-  assert(pos.getHashKey() != 0ULL && "Hash is zero");
-  assert(pos.getHashKey() == pos.computeHashFromScratch() &&
-         "Incremental hash drifted from true state");
-
-  // Cross-verify Mailbox array against Bitboard layers
   for (size_t sq = 0; sq < BOARD_SQUARE_COUNT; ++sq) {
     Square square = static_cast<Square>(sq);
     Piece p = pos.getPieceAt(square);
 
     if (p != PIECE_NONE) {
-      assert((pos.getPieces(p) & squareBB(square)) != 0 &&
-             "Piece bitboard desync");
+      assert((pos.getPieces(p) & squareBB(square)) != 0 && "Piece bitboard desync");
       Color c = static_cast<Color>(p / 6);
-      assert((pos.getPiecesByColor(c) & squareBB(square)) != 0 &&
-             "Color bitboard desync");
+      assert((pos.getPiecesByColor(c) & squareBB(square)) != 0 && "Color bitboard desync");
       PieceType pt = static_cast<PieceType>(p % 6);
-      assert((pos.getPiecesByType(pt) & squareBB(square)) != 0 &&
-             "Type bitboard desync");
+      assert((pos.getPiecesByType(pt) & squareBB(square)) != 0 && "Type bitboard desync");
     } else {
-      assert((allPieces & squareBB(square)) == 0 &&
-             "Occupancy bitboard desync");
+      assert((allPieces & squareBB(square)) == 0 && "Occupancy bitboard desync");
     }
   }
 }
@@ -101,6 +91,7 @@ void testCheckpoint1_1() {
     popLsb(diag);
     remainingPops++;
   }
+  
   assert(remainingPops == 7);
   assert(popCount(RANK_BB[RANK_1]) == 8);
 
@@ -111,31 +102,22 @@ void testCheckpoint1_2() {
   std::cout << "[Checkpoint 1.2] FEN Parsing & Position State\n";
 
   Position pos;
-
-  // Validate StartPos FEN initialization
   pos.setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
   assert(popCount(pos.getPieces(WHITE_PAWN)) == 8);
-  Bitboard allPieces =
-      pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
+  
+  Bitboard allPieces = pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
   assert(popCount(allPieces) == 32);
-
   assert(pos.getPieceAt(E1) == WHITE_KING);
   assert(pos.getPieceAt(E8) == BLACK_KING);
   assert(pos.getEnPassantSquare() == SQUARE_NONE);
+  assert(pos.getCastlingRights() == (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE));
 
-  CastlingRights cr = pos.getCastlingRights();
-  assert(cr ==
-         (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE));
-
-  // Validate intermediate test position
-  pos.setFEN(
-      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+  pos.setFEN("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
   allPieces = pos.getPiecesByColor(WHITE) | pos.getPiecesByColor(BLACK);
+  
   assert(popCount(allPieces) == 32);
-  cr = pos.getCastlingRights();
-  assert(cr ==
-         (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE));
+  assert(pos.getCastlingRights() == (WHITE_KINGSIDE | WHITE_QUEENSIDE | BLACK_KINGSIDE | BLACK_QUEENSIDE));
 
   std::cout << "-> Passed\n\n";
 }
@@ -150,12 +132,10 @@ void testCheckpoint1_3() {
   assert(popCount(nD4) == 8);
 
   Bitboard nG1 = KNIGHT_ATTACKS[G1];
-  assert(popCount(nG1) == 3 &&
-         nG1 == (squareBB(F3) | squareBB(H3) | squareBB(E2)));
+  assert(popCount(nG1) == 3 && nG1 == (squareBB(F3) | squareBB(H3) | squareBB(E2)));
 
   Bitboard kA1 = KING_ATTACKS[A1];
-  assert(popCount(kA1) == 3 &&
-         kA1 == (squareBB(A2) | squareBB(B1) | squareBB(B2)));
+  assert(popCount(kA1) == 3 && kA1 == (squareBB(A2) | squareBB(B1) | squareBB(B2)));
 
   Bitboard pE4 = PAWN_ATTACKS[WHITE][E4];
   assert(popCount(pE4) == 2 && pE4 == (squareBB(D5) | squareBB(F5)));
@@ -173,31 +153,24 @@ void testCheckpoint1_4() {
   pos.setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
   uint64_t initialHash = pos.getHashKey();
-  uint64_t scratchHash = pos.computeHashFromScratch();
-
   assert(initialHash != 0ULL);
-  assert(initialHash == scratchHash);
+  assert(initialHash == pos.computeHashFromScratch());
 
-  // Simulate incremental board changes
   pos.removePiece(WHITE_PAWN, E2);
   pos.setPiece(WHITE_PAWN, E4);
   pos.setEnPassantSquare(E3);
   pos.toggleSideToMove();
 
   uint64_t moveHash = pos.getHashKey();
-  uint64_t moveScratchHash = pos.computeHashFromScratch();
-
   assert(moveHash != initialHash);
-  assert(moveHash == moveScratchHash);
+  assert(moveHash == pos.computeHashFromScratch());
 
-  // Unmake the simulated move to verify perfect hash restoration
   pos.toggleSideToMove();
   pos.setEnPassantSquare(SQUARE_NONE);
   pos.removePiece(WHITE_PAWN, E4);
   pos.setPiece(WHITE_PAWN, E2);
 
-  uint64_t unmakeHash = pos.getHashKey();
-  assert(unmakeHash == initialHash);
+  assert(pos.getHashKey() == initialHash);
 
   std::cout << "-> Passed\n\n";
 }
@@ -205,15 +178,12 @@ void testCheckpoint1_4() {
 void testCheckpoint1_5() {
   std::cout << "[Checkpoint 1.5] Move Encoding\n";
 
-  // Validate structure size to prevent padding overhead
-  assert(sizeof(Move) == 2);
+  assert(sizeof(Move) == 2 && "Move struct exceeds 16 bits");
 
-  // Test quiet move extraction
   Move m_e2e4(E2, E4);
   assert(m_e2e4.getFrom() == E2);
   assert(m_e2e4.getTo() == E4);
 
-  // Test flag preservation
   Move m_dpush(E2, E4, FLAG_DOUBLE_PAWN_PUSH);
   assert(m_dpush.getTo() == E4);
 
@@ -223,7 +193,6 @@ void testCheckpoint1_5() {
   Move m_ep(D5, E6, FLAG_EP_CAPTURE);
   assert(m_ep.isCapture());
 
-  // Validate complex round-trip encoding (Promotion Capture)
   Move m_promocap(E7, F8, FLAG_PROMOTE_QUEEN_CAPTURE);
   assert(m_promocap.getFrom() == E7);
   assert(m_promocap.getTo() == F8);
@@ -244,7 +213,6 @@ void runPhase1ExitGate() {
   verifyPositionIntegrity(pos);
   uint64_t hash0 = pos.getHashKey();
 
-  // 1. e4
   pos.removePiece(WHITE_PAWN, E2);
   pos.setPiece(WHITE_PAWN, E4);
   pos.setEnPassantSquare(E3);
@@ -254,7 +222,6 @@ void runPhase1ExitGate() {
   uint64_t hash1 = pos.getHashKey();
   assert(hash1 != hash0);
 
-  // 1... e5
   pos.removePiece(BLACK_PAWN, E7);
   pos.setPiece(BLACK_PAWN, E5);
   pos.setEnPassantSquare(E6);
@@ -264,7 +231,6 @@ void runPhase1ExitGate() {
   uint64_t hash2 = pos.getHashKey();
   assert(hash2 != hash1 && hash2 != hash0);
 
-  // 2. Nf3
   pos.removePiece(WHITE_KNIGHT, G1);
   pos.setPiece(WHITE_KNIGHT, F3);
   pos.setEnPassantSquare(SQUARE_NONE);
@@ -274,7 +240,7 @@ void runPhase1ExitGate() {
   uint64_t hash3 = pos.getHashKey();
   assert(hash3 != hash2 && hash3 != hash1 && hash3 != hash0);
 
-  std::cout << "-> All Integration Assertions Passed\n\n\n";
+  std::cout << "-> All Integration Assertions Passed\n\n";
 }
 
 void testCheckpoint2_2() {
@@ -283,9 +249,7 @@ void testCheckpoint2_2() {
   Position pos;
   MoveList list;
 
-  // --- Setup 1: Raw Mobility Counts ---
   pos.setFEN("4k3/8/8/3N4/8/8/8/4K2N w - - 0 1");
-
   generateKnightMoves<WHITE>(pos, list);
   
   int d5Moves = 0;
@@ -295,44 +259,94 @@ void testCheckpoint2_2() {
     if (m.getFrom() == H1) h1Moves++;
   }
   
-  assert(list.size() == 10 && "Total knight moves should be 10");
-  assert(d5Moves == 8 && "D5 Knight should have exactly 8 moves");
-  assert(h1Moves == 2 && "H1 Knight should have exactly 2 moves");
+  assert(list.size() == 10 && "Knight mobility count mismatch");
+  assert(d5Moves == 8 && "D5 Knight open mobility mismatch");
+  assert(h1Moves == 2 && "H1 Knight corner mobility mismatch");
 
   MoveList kingList;
   generateKingMoves<WHITE>(pos, kingList);
-  assert(kingList.size() == 5 && "E1 King on the edge should have exactly 5 moves");
+  assert(kingList.size() == 5 && "Edge King mobility mismatch");
 
-  // --- Setup 2: Capture Flagging & Friendly-Fire Masking ---
-  // We place a White Knight on D5. 
-  // We place a White Pawn on E3 (Friendly piece, should be blocked).
-  // We place a Black Pawn on C7 (Enemy piece, should be flagged CAPTURE).
   pos.setFEN("8/2p5/8/3N4/8/4P3/8/8 w - - 0 1");
   MoveList combatList;
-  
   generateKnightMoves<WHITE>(pos, combatList);
   
   bool captureFound = false;
   bool friendlyFireFound = false;
 
   for (const Move& m : combatList) {
-    // Check if the generator incorrectly allowed a move to the friendly E3 pawn
-    if (m.getTo() == E3) {
-      friendlyFireFound = true;
-    }
-    // Check if the move to the enemy C7 pawn is correctly flagged
+    if (m.getTo() == E3) friendlyFireFound = true;
     if (m.getTo() == C7) {
-      assert(m.isCapture() && "Move to C7 should have FLAG_CAPTURE set");
+      assert(m.isCapture() && "Capture flag missing on enemy target");
       captureFound = true;
     } else {
-      assert(!m.isCapture() && "Non-capture move has FLAG_CAPTURE set");
+      assert(!m.isCapture() && "Capture flag incorrectly set on empty square");
     }
   }
 
-  assert(!friendlyFireFound && "Knight generated a move onto a friendly piece (E3)");
-  assert(captureFound && "Knight failed to generate a capture move onto an enemy piece (C7)");
+  assert(!friendlyFireFound && "Generator failed to mask friendly pieces");
+  assert(captureFound && "Generator failed to target enemy pieces");
 
   std::cout << "-> Passed\n\n";
 }
 
+void testCheckpoint2_3() {
+  std::cout << "[Checkpoint 2.3] Pawn Move Generation\n";
+
+  Position pos;
+  MoveList list;
+
+  pos.setFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  generatePawnMoves<WHITE>(pos, list);
+  assert(list.size() == 16 && "StartPos pawn move count mismatch");
+
+  list = MoveList();
+  pos.setFEN("8/8/8/8/8/8/P7/8 w - - 0 1");
+  generatePawnMoves<WHITE>(pos, list);
+  assert(list.size() == 2 && "A2 pawn mobility mismatch");
+
+  list = MoveList();
+  pos.setFEN("8/P7/8/8/8/8/8/8 w - - 0 1");
+  generatePawnMoves<WHITE>(pos, list);
+  assert(list.size() == 4 && "A7 pawn did not yield exactly 4 promotions");
+  for (const Move& m : list) {
+    assert(m.isPromotion() && "Promotion flag missing");
+    assert(m.getFlags() != FLAG_DOUBLE_PAWN_PUSH && "Double push flag incorrectly set on rank 7");
+  }
+
+  list = MoveList();
+  pos.setFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+  generatePawnMoves<WHITE>(pos, list);
+  
+  bool epFound = false;
+  for (const Move& m : list) {
+    if (m.getFrom() == E5 && m.getTo() == F6 && m.getFlags() == FLAG_EP_CAPTURE) {
+      epFound = true;
+      break;
+    }
+  }
+  assert(epFound && "Generator failed to identify en passant target");
+
+  list = MoveList();
+  pos.setFEN("8/8/8/8/p7/8/P7/8 w - - 0 1");
+  generatePawnMoves<WHITE>(pos, list);
+  assert(list.size() == 1 && "Generator incorrectly bypassed blocking piece");
+  assert(list[0].getTo() == A3 && "Only valid move should be single push to A3");
+
+  list = MoveList();
+  pos.setFEN("r1r5/1P6/8/8/8/8/8/8 w - - 0 1");
+  generatePawnMoves<WHITE>(pos, list);
+  
+  assert(list.size() == 12 && "Capture-promotion move count mismatch");
+
+  int pushPromos = 0, capPromos = 0;
+  for (const Move& m : list) {
+    if (m.getTo() == B8) pushPromos++;
+    if (m.getTo() == A8 || m.getTo() == C8) capPromos++;
+  }
+  assert(pushPromos == 4 && capPromos == 8 && "Promotion flag distribution mismatch");
+
+  std::cout << "-> Passed\n\n";
 }
+
+}  // namespace Tests
